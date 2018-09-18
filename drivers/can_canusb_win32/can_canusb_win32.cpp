@@ -40,14 +40,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 extern "C" {
 #include "can_driver.h"
 }
-class can_nanomsg_win32
+class can_canusbd2xx_win32
    {
    public:
       class error
         {
         };
-	  can_nanomsg_win32(s_BOARD *board);
-	  ~can_nanomsg_win32();
+	  can_canusbd2xx_win32(s_BOARD *board);
+	  ~can_canusbd2xx_win32();
       bool send(const Message *m);
       bool receive(Message *m);
    private:
@@ -55,7 +55,7 @@ class can_nanomsg_win32
       bool close_rs232();
       bool get_can_data(const char* can_cmd_buf, long& bufsize, Message* m);
       bool set_can_data(const Message& m, std::string& can_cmd);
-	  bool can_nanomsg_win32::doTX(std::string can_cmd);
+	  bool can_canusbd2xx_win32::doTX(std::string can_cmd);
    private:
       HANDLE m_port;
       HANDLE m_read_event;
@@ -63,10 +63,13 @@ class can_nanomsg_win32
       std::string m_residual_buffer;
    };
 
-can_nanomsg_win32::can_nanomsg_win32(s_BOARD *board) : m_port(INVALID_HANDLE_VALUE),
+can_canusbd2xx_win32::can_canusbd2xx_win32(s_BOARD *board) : m_port(INVALID_HANDLE_VALUE),
       m_read_event(0),
       m_write_event(0)
    {
+
+	printf("HELLO WORLD\n");
+
    if (!open_rs232(board->busname))
       throw error();
    /*
@@ -133,13 +136,13 @@ can_nanomsg_win32::can_nanomsg_win32(s_BOARD *board) : m_port(INVALID_HANDLE_VAL
 
    }
 
-can_nanomsg_win32::~can_nanomsg_win32()
+can_canusbd2xx_win32::~can_canusbd2xx_win32()
    {
    close_rs232();
    }
 
 
-bool can_nanomsg_win32::doTX(std::string can_cmd)
+bool can_canusbd2xx_win32::doTX(std::string can_cmd)
 {
 
 	OVERLAPPED overlapped;
@@ -161,7 +164,7 @@ bool can_nanomsg_win32::doTX(std::string can_cmd)
 
 }
 
-bool can_nanomsg_win32::send(const Message *m)
+bool can_canusbd2xx_win32::send(const Message *m)
    {
    if (m_port == INVALID_HANDLE_VALUE)
       return true;
@@ -176,7 +179,7 @@ bool can_nanomsg_win32::send(const Message *m)
    }
 
 
-bool can_nanomsg_win32::receive(Message *m)
+bool can_canusbd2xx_win32::receive(Message *m)
    {
 	
 	m->cob_id = 0;
@@ -239,7 +242,7 @@ bool can_nanomsg_win32::receive(Message *m)
    return true;
    }
 
-bool can_nanomsg_win32::open_rs232(std::string port, int baud_rate)
+bool can_canusbd2xx_win32::open_rs232(std::string port, int baud_rate)
    {
    if (m_port != INVALID_HANDLE_VALUE)
       return true;
@@ -293,7 +296,7 @@ bool can_nanomsg_win32::open_rs232(std::string port, int baud_rate)
    return true;
    }
 
-bool can_nanomsg_win32::close_rs232()
+bool can_canusbd2xx_win32::close_rs232()
    {
    if (m_port != INVALID_HANDLE_VALUE)
       {
@@ -309,7 +312,7 @@ bool can_nanomsg_win32::close_rs232()
    return true;
    }
 
-bool can_nanomsg_win32::get_can_data(const char* can_cmd_buf, long& bufsize, Message* m)
+bool can_canusbd2xx_win32::get_can_data(const char* can_cmd_buf, long& bufsize, Message* m)
 {
 	if (bufsize < 5)
 	{
@@ -408,7 +411,7 @@ bool can_nanomsg_win32::get_can_data(const char* can_cmd_buf, long& bufsize, Mes
    return true;
    }
 
-bool can_nanomsg_win32::set_can_data(const Message& m, std::string& can_cmd)
+bool can_canusbd2xx_win32::set_can_data(const Message& m, std::string& can_cmd)
    {
    // build can_uvccm_win32 command string
    std::ostringstream can_cmd_str;
@@ -455,13 +458,13 @@ bool can_nanomsg_win32::set_can_data(const Message& m, std::string& can_cmd)
 extern "C"
    UNS8 __stdcall canReceive_driver(CAN_HANDLE fd0, Message *m)
    {
-	   return (UNS8)(!(reinterpret_cast<can_nanomsg_win32*>(fd0)->receive(m)));
+	   return (UNS8)(!(reinterpret_cast<can_canusbd2xx_win32*>(fd0)->receive(m)));
    }
 
 extern "C"
    UNS8 __stdcall canSend_driver(CAN_HANDLE fd0, Message const *m)
    {
-	   return (UNS8)reinterpret_cast<can_nanomsg_win32*>(fd0)->send(m);
+	   return (UNS8)reinterpret_cast<can_canusbd2xx_win32*>(fd0)->send(m);
    }
 
 extern "C"
@@ -469,9 +472,9 @@ extern "C"
    {
    try
       {
-		  return (CAN_HANDLE) new can_nanomsg_win32(board);
+		  return (CAN_HANDLE) new can_canusbd2xx_win32(board);
       }
-   catch (can_nanomsg_win32::error&)
+   catch (can_canusbd2xx_win32::error&)
       {
       return NULL;
       }
@@ -480,7 +483,7 @@ extern "C"
 extern "C"
    int __stdcall canClose_driver(CAN_HANDLE inst)
    {
-	   delete reinterpret_cast<can_nanomsg_win32*>(inst);
+	   delete reinterpret_cast<can_canusbd2xx_win32*>(inst);
    return 1;
    }
 

@@ -62,7 +62,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)can_canusb_win32.dll</OutputFile>
+      <OutputFile>$(OutDir)can_usb_win32.dll</OutputFile>
       <ModuleDefinitionFile>can_canusb_win32.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)can_canusb_win32.pdb</ProgramDatabaseFile>
@@ -85,7 +85,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)can_canusb_win32.dll</OutputFile>
+      <OutputFile>$(OutDir)can_usb_win32.dll</OutputFile>
       <ModuleDefinitionFile>can_canusb_win32.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
