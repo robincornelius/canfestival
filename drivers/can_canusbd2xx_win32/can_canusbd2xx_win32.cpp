@@ -164,27 +164,6 @@ bool can_canusbd2xx_win32::doTX(std::string can_cmd)
 
 	bool result = (BytesWritten == can_cmd.length());
 
-
-	/*
-
-	OVERLAPPED overlapped;
-	::memset(&overlapped, 0, sizeof overlapped);
-	overlapped.hEvent = m_write_event;
-	::ResetEvent(overlapped.hEvent);
-
-	unsigned long bytes_written = 0;
-	::WriteFile(m_port, can_cmd.c_str(), (unsigned long)can_cmd.length(), &bytes_written, &overlapped);
-	// wait for write operation completion
-	enum { WRITE_TIMEOUT = 1000 };
-	::WaitForSingleObject(overlapped.hEvent, WRITE_TIMEOUT);
-	// get number of bytes written
-	::GetOverlappedResult(m_port, &overlapped, &bytes_written, FALSE);
-
-	bool result = (bytes_written == can_cmd.length());
-
-	return result;
-	*/
-
 	return result;
 
 }
@@ -205,6 +184,7 @@ bool can_canusbd2xx_win32::send(const Message *m)
    return false;
    }
 
+#define RX_BUF_SIZE 1024
 
 bool can_canusbd2xx_win32::receive(Message *m)
    {
@@ -212,11 +192,12 @@ bool can_canusbd2xx_win32::receive(Message *m)
 	DWORD EventDWord;
 	DWORD TxBytes;
 	DWORD RxBytes;
-	DWORD BytesReceived;
+	DWORD BytesReceived;
+
 	m->cob_id = 0;
 	m->len = 0;
 
-	char RxBuffer[1024];
+	char RxBuffer[RX_BUF_SIZE];
 
 	long res_buffer_size = (long)m_residual_buffer.size();
 	bool result = get_can_data(m_residual_buffer.c_str(), res_buffer_size, m);
@@ -230,7 +211,7 @@ bool can_canusbd2xx_win32::receive(Message *m)
 	FT_GetStatus(ftHandle, &RxBytes, &TxBytes, &EventDWord);
 
 	if (RxBytes > 0) {
-		ftStatus = FT_Read(ftHandle, RxBuffer, RxBytes, &BytesReceived);
+		ftStatus = FT_Read(ftHandle, RxBuffer, RxBytes< RX_BUF_SIZE ?RxBytes: RX_BUF_SIZE, &BytesReceived);
 		if (ftStatus == FT_OK) 
 		{
 
@@ -247,69 +228,7 @@ bool can_canusbd2xx_win32::receive(Message *m)
 		else {
 			// FT_Read Failed
 		}
-	}
-
-	return true;
-
-	/*
-
-
-	if (m_port == INVALID_HANDLE_VALUE)
-	{
-		return false;
 	}
-
-   long res_buffer_size = (long)m_residual_buffer.size();
-   bool result = get_can_data(m_residual_buffer.c_str(), res_buffer_size, m);
-
-   if (result)
-   {
-	  m_residual_buffer.erase(0, res_buffer_size);
-      return true;
-   }
-
-   enum { READ_TIMEOUT = 500 };
-
-   OVERLAPPED overlapped;
-   ::memset(&overlapped, 0, sizeof overlapped);
-   overlapped.hEvent = m_read_event;
-   ::ResetEvent(overlapped.hEvent);
-   unsigned long event_mask = 0;
-
-   if (FALSE == ::WaitCommEvent(m_port, &event_mask, &overlapped) && ERROR_IO_PENDING == ::GetLastError())
-      {
-      if (WAIT_TIMEOUT == ::WaitForSingleObject(overlapped.hEvent, READ_TIMEOUT))
-         return true;
-      }
-
-   // get number of bytes in the input que
-   COMSTAT stat;
-   ::memset(&stat, 0, sizeof stat);
-   unsigned long errors = 0;
-   ::ClearCommError(m_port, &errors, &stat);
-   if (stat.cbInQue == 0)
-	   return true;
-   char buffer[3000];
-
-   unsigned long bytes_to_read = min(stat.cbInQue, sizeof (buffer));
-
-   unsigned long bytes_read = 0;
-   ::ReadFile(m_port, buffer, bytes_to_read, &bytes_read, &overlapped);
-   // wait for read operation completion
-   ::WaitForSingleObject(overlapped.hEvent, READ_TIMEOUT);
-   // get number of bytes read
-   ::GetOverlappedResult(m_port, &overlapped, &bytes_read, FALSE);
-   result = true;
-   if (bytes_read > 0)
-      {
-      m_residual_buffer.append(buffer, bytes_read);
-      res_buffer_size = (long)m_residual_buffer.size();
-      result = get_can_data(m_residual_buffer.c_str(), res_buffer_size, m);
-      if (result)
-         m_residual_buffer.erase(0, res_buffer_size);
-      }
-  // return result;
-  */
 
    return true;
    }
@@ -322,64 +241,14 @@ bool can_canusbd2xx_win32::open_rs232(std::string port, int baud_rate)
 		// FT_Open OK, use ftHandle to access device
 
 		ftStatus = FT_SetBaudRate(ftHandle, 115200); // Set baud rate to 115200
-		ftStatus = FT_SetDataCharacteristics(ftHandle, FT_BITS_8, FT_STOP_BITS_1,FT_PARITY_NONE);
-	}	else {
+		ftStatus = FT_SetDataCharacteristics(ftHandle, FT_BITS_8, FT_STOP_BITS_1,FT_PARITY_NONE);
+
+	}
+	else {
 		// FT_Open failed
 		return false;
-	}
+	}
 
-/*
-   if (m_port != INVALID_HANDLE_VALUE)
-      return true;
-
-   //std::ostringstream device_name;
-   //device_name << "COM" << port;
-
-   m_port = ::CreateFile(port.c_str(),
-                         GENERIC_READ | GENERIC_WRITE,
-                         0,   // exclusive access
-                         NULL,   // no security
-                         OPEN_EXISTING,
-                         FILE_FLAG_OVERLAPPED,   // overlapped I/O
-                         NULL); // null template
-
-   // Check the returned handle for INVALID_HANDLE_VALUE and then set the buffer sizes.
-   if (m_port == INVALID_HANDLE_VALUE)
-      return false;
-
-   //  SetCommMask(m_hCom,EV_RXCHAR|EV_TXEMPTY|EV_CTS|EV_DSR|EV_RLSD|EV_BREAK|EV_ERR|EV_RING); //
-   ::SetCommMask(m_port, EV_RXFLAG);
-
-   COMMTIMEOUTS timeouts;
-   ::memset(&timeouts, 0, sizeof (timeouts));
-   timeouts.ReadIntervalTimeout = -1;
-   timeouts.ReadTotalTimeoutConstant = 0;
-   timeouts.ReadTotalTimeoutMultiplier = 0;
-   timeouts.WriteTotalTimeoutConstant = 5000;
-   timeouts.WriteTotalTimeoutMultiplier = 0;
-   SetCommTimeouts(m_port, &timeouts); //
-
-   ::SetupComm(m_port, 1024, 512); // set buffer sizes
-
-   // Port settings are specified in a Data Communication Block (DCB). The easiest way to initialize a DCB is to call GetCommState to fill in its default values, override the values that you want to change and then call SetCommState to set the values.
-   DCB dcb;
-   ::memset(&dcb, 0, sizeof (dcb));
-   ::GetCommState(m_port, &dcb);
-   dcb.BaudRate = baud_rate;
-   dcb.ByteSize = 8;
-   dcb.Parity = NOPARITY;
-   dcb.StopBits = ONESTOPBIT;
-   dcb.fAbortOnError = TRUE;
-   dcb.EvtChar = 0x0A; // '\n' character
-   ::SetCommState(m_port, &dcb);
-
-   ::PurgeComm(m_port, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR);
-
-   m_read_event = ::CreateEvent(NULL, TRUE, FALSE, NULL);
-   m_write_event = ::CreateEvent(NULL, TRUE, FALSE, NULL);
-
-   return true;
-  */
 
   }
 
@@ -574,3 +443,29 @@ extern "C"
 	{
 	return 0;
 	} 
+
+extern "C"
+UNS8 __stdcall canEnumerate2_driver(char ** out)
+{
+
+	FT_STATUS ftStatus;
+	DWORD numDevs;
+
+	out = (CHAR**)malloc(sizeof(char*) * 2);
+
+	out[0] = (char*)malloc(10);
+	out[1] = (char*)malloc(10);
+	strcpy(out[0], "HELLO");
+	strcpy(out[1], "abcde");
+
+	ftStatus = FT_ListDevices(&numDevs, NULL, FT_LIST_NUMBER_ONLY);
+	if (ftStatus == FT_OK) {
+		// FT_ListDevices OK, number of devices connected is in numDevs
+	}
+	else {
+		// FT_ListDevices failed
+	}
+
+	return 2;
+
+}
