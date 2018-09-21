@@ -37,6 +37,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <string>         // std::string
 #include <cstddef>        // std::size_t
 
+
+#include "enumser.h"
+
 extern "C" {
 #include "can_driver.h"
 }
@@ -452,6 +455,58 @@ bool can_canusbd2xx_win32::set_can_data(const Message& m, std::string& can_cmd)
 
    return false;
    }
+
+
+
+typedef void (__stdcall *setStringValuesCB_t) (char *pStringValues[], int nValues);
+static setStringValuesCB_t __stdcall gSetStringValuesCB;
+
+extern "C" void __stdcall NativeCallDelegate(char *pStringValues[], int nValues)
+{
+	if (gSetStringValuesCB)
+		gSetStringValuesCB(pStringValues, nValues);
+}
+
+extern "C" void __stdcall canEnumerate2_driver(setStringValuesCB_t callback)
+{
+
+
+	CEnumerateSerial::CPortsArray ports;
+	CEnumerateSerial::CPortAndNamesArray portAndNames;
+	CEnumerateSerial::CNamesArray names;
+
+	if (CEnumerateSerial::UsingRegistry(names))
+	{
+
+		gSetStringValuesCB = callback;
+		char **Values = (char**)malloc(names.size());
+
+		int x = 0;
+		for (const auto& name : names)
+		{
+			char buf[20];
+			sprintf(buf, "%s",name.c_str());
+			*(Values + x) = (char*)malloc(strlen(buf));
+			strcpy(*(Values + x), buf);
+
+			x++;
+
+		}
+
+		NativeCallDelegate(Values, names.size());
+
+	}
+	else
+		_tprintf(_T("CEnumerateSerial::UsingRegistry failed, Error:%u\n"), GetLastError());
+
+
+
+
+
+
+
+}
+
 
 
 //------------------------------------------------------------------------

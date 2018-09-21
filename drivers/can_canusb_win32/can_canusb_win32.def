@@ -27,3 +27,4 @@ EXPORTS
    canOpen_driver
    canClose_driver
    canChangeBaudRate_driver
+   canEnumerate2_driver

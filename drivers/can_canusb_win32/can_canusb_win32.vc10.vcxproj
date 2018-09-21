@@ -83,6 +83,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CallingConvention>StdCall</CallingConvention>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)can_canusb_win32.dll</OutputFile>
@@ -100,9 +101,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="can_canusb_win32.cpp" />
+    <ClCompile Include="enumser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="can_canusb_win32.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="enumser.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

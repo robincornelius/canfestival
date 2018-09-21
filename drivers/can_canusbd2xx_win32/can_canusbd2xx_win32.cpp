@@ -236,7 +236,10 @@ bool can_canusbd2xx_win32::receive(Message *m)
 bool can_canusbd2xx_win32::open_rs232(std::string port, int baud_rate)
    {
 
-	ftStatus = FT_Open(0, &ftHandle);
+	int portno;
+	sscanf(port.c_str(), "ftdi://%d/", &portno);
+
+	ftStatus = FT_Open(portno, &ftHandle);
 	if (ftStatus == FT_OK) {
 		// FT_Open OK, use ftHandle to access device
 
@@ -444,6 +447,37 @@ extern "C"
 	return 0;
 	} 
 
+typedef void (__stdcall *setStringValuesCB_t) (char *pStringValues[], int nValues);
+static setStringValuesCB_t __stdcall gSetStringValuesCB;
+
+void __stdcall NativeCallDelegate(char *pStringValues[], int nValues)
+{
+	if (gSetStringValuesCB)
+		gSetStringValuesCB(pStringValues, nValues);
+}
+
+extern "C" void __stdcall canEnumerate2_driver(setStringValuesCB_t callback)
+{
+
+	DWORD numDevs;
+	ftStatus = FT_ListDevices(&numDevs, NULL, FT_LIST_NUMBER_ONLY);
+
+    gSetStringValuesCB = callback;
+	char **Values = (char**)malloc(sizeof(void*)*numDevs);
+
+	for (int x = 0; x < numDevs; x++)
+	{
+		char buf[20];
+		sprintf(buf, "ftdi://%d/", x);
+		*(Values+x) = (char*)malloc(strlen(buf));
+		strcpy(*(Values+x),buf);
+	}
+
+
+	NativeCallDelegate(Values, numDevs);
+}
+
+/*
 extern "C"
 UNS8 __stdcall canEnumerate2_driver(char ** out)
 {
@@ -469,3 +503,4 @@ UNS8 __stdcall canEnumerate2_driver(char ** out)
 	return 2;
 
 }
+*/
