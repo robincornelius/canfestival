@@ -476,31 +476,3 @@ extern "C" void __stdcall canEnumerate2_driver(setStringValuesCB_t callback)
 
 	NativeCallDelegate(Values, numDevs);
 }
-
-/*
-extern "C"
-UNS8 __stdcall canEnumerate2_driver(char ** out)
-{
-
-	FT_STATUS ftStatus;
-	DWORD numDevs;
-
-	out = (CHAR**)malloc(sizeof(char*) * 2);
-
-	out[0] = (char*)malloc(10);
-	out[1] = (char*)malloc(10);
-	strcpy(out[0], "HELLO");
-	strcpy(out[1], "abcde");
-
-	ftStatus = FT_ListDevices(&numDevs, NULL, FT_LIST_NUMBER_ONLY);
-	if (ftStatus == FT_OK) {
-		// FT_ListDevices OK, number of devices connected is in numDevs
-	}
-	else {
-		// FT_ListDevices failed
-	}
-
-	return 2;
-
-}
-*/
